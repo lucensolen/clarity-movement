@@ -1,5 +1,27 @@
-/* Neutral theme – soft, clean, universal */
+/* ——————————————————————————
+   RICH NEUTRAL THEME SKIN
+—————————————————————————— */
 
 body {
-  background: #f6f5f2;
+  background: linear-gradient(to bottom right, #f6f5f2, #f1f0ed);
+}
+
+.header {
+  background: rgba(255,255,255,0.92);
+}
+
+.card {
+  background: rgba(255,255,255,0.88);
+}
+
+.toolbar-pill {
+  background: rgba(248,248,245,0.95);
+}
+
+.mini-item {
+  background: rgba(255,255,255,0.86);
+}
+
+.footer {
+  background: rgba(12,14,18,0.92);
 }
