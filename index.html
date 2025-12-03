@@ -6,24 +6,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- CORE STYLES -->
-  <link rel="stylesheet" href="core/core.css?v=2" />
-  <link rel="stylesheet" href="skins/skin-neutral.css?v=2" />
+  <link rel="stylesheet" href="core/core.css" />
+  <link rel="stylesheet" href="skins/skin-neutral.css" />
 </head>
 
 <body>
+  <!-- The header + toolbar + footer are created by JS -->
   <div id="app"></div>
 
   <!-- COMPONENTS -->
-  <script src="core/components.js?v=2"></script>
+  <script src="core/components.js"></script>
 
   <!-- ENGINE -->
-  <script src="core/app.js?v=2"></script>
+  <script src="core/app.js"></script>
 
   <!-- WORLD CONFIG -->
-  <script src="data/world-neutral.js?v=2"></script>
+  <script src="data/world-neutral.js"></script>
 
   <script>
-    LucenOS.initNeutral(); 
+    // Boot the neutral world
+    LucenOS.initNeutral();
   </script>
 </body>
 </html>
