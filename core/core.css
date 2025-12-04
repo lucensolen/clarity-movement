@@ -1,6 +1,6 @@
 /* ——————————————————————————
    LUCEN OS – CORE RUNTIME CSS
-   Rich Neutral Variant
+   Rich Neutral Variant (Updated for Footer Mode B)
 —————————————————————————— */
 
 :root {
@@ -45,15 +45,19 @@ html, body {
 
 body {
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 #app {
   max-width: 1020px;
   margin: 0 auto;
-  padding: 24px 16px 140px;
+  padding: 24px 16px 180px; /* footer clearance for interactive modes */
+  position: relative;
 }
 
-/* LOCAL NAV (HEADER) */
+/* ---------------------------------------------
+   LOCAL NAV (HEADER)
+--------------------------------------------- */
 
 .header-shell {
   position: sticky;
@@ -116,7 +120,9 @@ body {
   color: var(--text-faint);
 }
 
-/* TOOLBAR */
+/* ---------------------------------------------
+   TOOLBAR NAVIGATION
+--------------------------------------------- */
 
 .toolbar {
   margin-top: 10px;
@@ -156,7 +162,9 @@ body {
   box-shadow: 0 8px 18px rgba(0,0,0,0.16);
 }
 
-/* GRID + CARDS */
+/* ---------------------------------------------
+   GRID + CARDS
+--------------------------------------------- */
 
 .grid {
   display: grid;
@@ -200,10 +208,11 @@ body {
 
 .card-actions {
   display: flex;
-  justify-content: flex-start;
 }
 
-/* BUTTONS */
+/* ---------------------------------------------
+   BUTTONS
+--------------------------------------------- */
 
 .btn {
   padding: 8px 16px;
@@ -230,7 +239,9 @@ body {
   transform: translateY(-1px);
 }
 
-/* MINI MODULE LIST */
+/* ---------------------------------------------
+   MINI MODULE LIST
+--------------------------------------------- */
 
 .mini-list {
   display: flex;
@@ -259,7 +270,9 @@ body {
   color: var(--text-soft);
 }
 
-/* VIEW TRANSITIONS */
+/* ---------------------------------------------
+   VIEW TRANSITIONS
+--------------------------------------------- */
 
 .view {
   opacity: 0;
@@ -274,29 +287,35 @@ body {
   transform: translateY(0);
 }
 
-/* GLOBAL NAV (FOOTER / OS BAR) */
+/* ============================================================
+   GLOBAL NAV (FOOTER / OS BAR)
+   Updated for interactive / reveal / static modes (B)
+============================================================ */
 
 .footer-shell {
   position: fixed;
   left: 50%;
-  bottom: -160px;
+  bottom: -200px; /* fully hidden until shown */
   transform: translateX(-50%);
   width: calc(100% - 24px);
   max-width: 1020px;
-  z-index: 30;
-  transition: bottom var(--transition-slow);
+  z-index: 70;
+  transition: bottom var(--transition-slow), opacity var(--transition-med);
+  opacity: 0;
 }
 
 .footer-shell.visible {
   bottom: 0;
+  opacity: 1;
 }
 
 .footer-shell.footer-static {
   bottom: 0;
+  opacity: 1;
 }
 
 .footer {
-  padding: 18px 18px 14px;
+  padding: 18px 18px 16px;
   border-radius: 22px 22px 14px 14px;
   background: var(--footer-panel);
   color: var(--footer-text);
@@ -315,13 +334,13 @@ body {
   margin-top: 4px;
 }
 
-/* Rows + shadow notches */
+/* Footer rows */
 
 .footer-rows {
   margin-top: 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .footer-row {
@@ -334,7 +353,6 @@ body {
     inset 0 -1px 0 rgba(0,0,0,0.55);
 }
 
-/* Remove top notch on first row and bottom notch on last row for subtlety */
 .footer-row:first-child {
   box-shadow:
     inset 0 -1px 0 rgba(0,0,0,0.55);
@@ -345,7 +363,7 @@ body {
     inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
-/* Footer buttons */
+/* Footer links */
 
 .footer-link {
   padding: 8px 14px;
@@ -356,11 +374,14 @@ body {
   font-size: 11px;
   cursor: pointer;
   text-decoration: none;
+  transition: var(--transition-fast);
 }
 
 .footer-link:hover {
-  background: #1f2730;
+  background: #222a33;
 }
+
+/* Donate button special case */
 
 .footer-donate {
   background: var(--footer-accent);
@@ -370,4 +391,24 @@ body {
 
 .footer-donate:hover {
   background: #3ba89e;
-                              }  
+}
+
+/* Footer button spacers (for hidden items) */
+
+.footer-spacer {
+  width: 80px;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------
+   FOOTER SENTINEL (for reveal & interactive)
+--------------------------------------------- */
+
+#lucen-footer-trigger {
+  width: 100%;
+  height: 1px;
+  pointer-events: none;
+  opacity: 0;
+}
