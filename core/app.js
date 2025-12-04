@@ -1,23 +1,15 @@
 /* ______________________________
    LUCEN OS – NEUTRAL RUNTIME ENGINE
    Local Nav (header) + Global Nav (footer)
-   Now with footer modes: interactive / reveal / static
+   Footer modes: interactive / reveal / static
 ________________________________ */
 
-// Global settings – tweak per OS build.
 const LucenOS = {
   settings: {
-    // "interactive" = original drawer: appears at bottom, hides on scroll up
-    // "reveal"      = shows while bottom sentinel is in view
-    // "static"      = always visible
-    footerMode: "interactive",
-
-    // How far you must scroll UP (px) before interactive footer hides
+    footerMode: "interactive", // interactive | reveal | static
     footerHideThreshold: 80,
-
     theme: "rich-neutral",
 
-    // Toggle which Global Nav buttons show
     showMasterFields: true,
     showSettings: true,
     showModes: true,
@@ -26,7 +18,7 @@ const LucenOS = {
   },
 
   state: {
-    level: "core",   // "core" | "master" | "field" | "module" | "mini"
+    level: "core",
     masterId: null,
     fieldId: null,
     moduleId: null,
@@ -35,64 +27,44 @@ const LucenOS = {
 
   initNeutral() {
     this.app = document.getElementById("app");
-
-    // Build Local Nav (header) + Global Nav (footer)
     this.buildHeader();
     this.buildFooter();
     this.initFooterMode();
 
-    // Routing: listen to hash changes
     window.addEventListener("hashchange", () => this.applyRouteFromHash());
 
-    // On first load: use hash if present, else Hub (core)
     if (location.hash && location.hash.length > 1) {
       this.applyRouteFromHash();
     } else {
-      this.setState(
-        { level: "core", masterId: null, fieldId: null, moduleId: null, miniId: null },
-        true
-      );
+      this.setState({ level: "core" }, true);
     }
   },
 
-  /* ===== ROUTING UTILITIES ===== */
-
+  /* ROUTE ENCODING */
   encodeRoute(state) {
     const { level, masterId, fieldId, moduleId, miniId } = state;
-
     if (level === "core") return "#core";
     if (level === "master") return `#master|${masterId}`;
     if (level === "field") return `#field|${masterId}|${fieldId}`;
     if (level === "module") return `#module|${masterId}|${fieldId}|${moduleId}`;
     if (level === "mini") return `#mini|${masterId}|${fieldId}|${moduleId}|${miniId}`;
-
     return "#core";
   },
 
   decodeRoute(hash) {
-    if (!hash || hash.length <= 1) {
-      return {
-        level: "core",
-        masterId: null,
-        fieldId: null,
-        moduleId: null,
-        miniId: null
-      };
-    }
+    if (!hash || hash.length <= 1)
+      return { level: "core", masterId: null, fieldId: null, moduleId: null, miniId: null };
 
-    const raw = hash.replace(/^#/, "");
-    const parts = raw.split("|");
+    const parts = hash.replace(/^#/, "").split("|");
     const kind = parts[0];
 
-    if (kind === "core") {
+    if (kind === "core")
       return { level: "core", masterId: null, fieldId: null, moduleId: null, miniId: null };
-    }
 
-    if (kind === "master" && parts.length >= 2) {
+    if (kind === "master" && parts.length >= 2)
       return { level: "master", masterId: parts[1], fieldId: null, moduleId: null, miniId: null };
-    }
 
-    if (kind === "field" && parts.length >= 3) {
+    if (kind === "field" && parts.length >= 3)
       return {
         level: "field",
         masterId: parts[1],
@@ -100,9 +72,8 @@ const LucenOS = {
         moduleId: null,
         miniId: null
       };
-    }
 
-    if (kind === "module" && parts.length >= 4) {
+    if (kind === "module" && parts.length >= 4)
       return {
         level: "module",
         masterId: parts[1],
@@ -110,9 +81,8 @@ const LucenOS = {
         moduleId: parts[3],
         miniId: null
       };
-    }
 
-    if (kind === "mini" && parts.length >= 5) {
+    if (kind === "mini" && parts.length >= 5)
       return {
         level: "mini",
         masterId: parts[1],
@@ -120,39 +90,28 @@ const LucenOS = {
         moduleId: parts[3],
         miniId: parts[4]
       };
-    }
 
-    // Fallback
-    return {
-      level: "core",
-      masterId: null,
-      fieldId: null,
-      moduleId: null,
-      miniId: null
-    };
+    return { level: "core" };
   },
 
   applyRouteFromHash() {
     const parsed = this.decodeRoute(location.hash);
-    this.setState(parsed, false); // don't push history again
+    this.setState(parsed, false);
   },
 
   setState(newState, pushHistory) {
     this.state = { ...newState };
 
     if (pushHistory) {
-      const targetHash = this.encodeRoute(this.state);
-      if (location.hash !== targetHash) {
-        location.hash = targetHash;
-      }
+      const target = this.encodeRoute(this.state);
+      if (location.hash !== target) location.hash = target;
     }
 
     this.render();
     window.scrollTo({ top: 0, behavior: "instant" });
   },
 
-  /* ===== LOCAL NAV (HEADER) ===== */
-
+  /* HEADER */
   buildHeader() {
     const shell = document.createElement("div");
     shell.className = "header-shell";
@@ -160,15 +119,14 @@ const LucenOS = {
     const header = document.createElement("div");
     header.className = "header";
 
-    // Back + title + breadcrumbs
     const topRow = document.createElement("div");
     topRow.className = "header-top-row";
 
-    const backBtn = document.createElement("button");
-    backBtn.type = "button";
-    backBtn.className = "btn header-back";
-    backBtn.textContent = "Back";
-    backBtn.onclick = () => this.navigateUp();
+    const back = document.createElement("button");
+    back.type = "button";
+    back.className = "btn header-back";
+    back.textContent = "Back";
+    back.onclick = () => this.navigateUp();
 
     const top = document.createElement("div");
     top.className = "header-top";
@@ -179,17 +137,16 @@ const LucenOS = {
 
     const sub = document.createElement("div");
     sub.className = "header-sub";
-    sub.textContent = "Multi-field skeleton • Local Nav within this universe";
+    sub.textContent = "Local Nav • Universe Navigation";
 
     const pos = document.createElement("div");
     pos.className = "header-pos";
-    pos.textContent = "";
 
     top.appendChild(title);
     top.appendChild(sub);
     top.appendChild(pos);
 
-    topRow.appendChild(backBtn);
+    topRow.appendChild(back);
     topRow.appendChild(top);
 
     const toolbar = document.createElement("div");
@@ -204,101 +161,100 @@ const LucenOS = {
     this.headerShell = shell;
     this.headerPos = pos;
     this.toolbar = toolbar;
-    this.backButton = backBtn;
+    this.backButton = back;
   },
 
-  updateHeader(context) {
-    const isCore = this.state.level === "core";
+  updateHeader(ctx) {
+    const isHub = this.state.level === "core";
+    this.backButton.style.display = isHub ? "none" : "inline-flex";
 
-    // Back only when not at Hub
-    if (this.backButton) {
-      this.backButton.style.display = isCore ? "none" : "inline-flex";
-    }
-
-    // Breadcrumb text
     const parts = [];
-    if (context.master) parts.push(context.master.name);
-    if (context.field) parts.push(context.field.name);
-    if (context.module) parts.push(context.module.name);
-    if (context.mini) parts.push(context.mini.name);
+    if (ctx.master) parts.push(ctx.master.name);
+    if (ctx.field) parts.push(ctx.field.name);
+    if (ctx.module) parts.push(ctx.module.name);
+    if (ctx.mini) parts.push(ctx.mini.name);
 
-    const levelLabel = this.state.level.toUpperCase();
+    const label = this.state.level.toUpperCase();
     const path = parts.length ? parts.join(" / ") : "Hub";
 
-    if (this.headerPos) {
-      this.headerPos.textContent = `${levelLabel} • ${path}`;
-    }
+    this.headerPos.textContent = `${label} • ${path}`;
 
-    // Toolbar pills (local navigation choices)
     this.toolbar.innerHTML = "";
-
     const WC = window.LucenWorld;
 
     if (this.state.level === "core") {
-      WC.masterFields.forEach(mf => {
+      WC.masterFields.forEach(mf =>
         this.toolbar.appendChild(
-          LucenComponents.createToolbarPill(
-            mf.name,
-            false,
-            () => this.goMaster(mf.id)
-          )
-        );
-      });
-    } else if (this.state.level === "master") {
+          LucenComponents.createToolbarPill(mf.name, false, () => this.goMaster(mf.id))
+        )
+      );
+      return;
+    }
+
+    if (this.state.level === "master") {
       this.toolbar.appendChild(
         LucenComponents.createToolbarPill("Hub", false, () => this.goCore())
       );
 
-      context.master.fields.forEach(f => {
+      ctx.master.fields.forEach(f =>
         this.toolbar.appendChild(
-          LucenComponents.createToolbarPill(
-            f.name,
-            context.field && context.field.id === f.id,
-            () => this.goField(context.master.id, f.id)
+          LucenComponents.createToolbarPill(f.name, false, () =>
+            this.goField(ctx.master.id, f.id)
           )
-        );
-      });
-    } else if (this.state.level === "field") {
+        )
+      );
+      return;
+    }
+
+    if (this.state.level === "field") {
       this.toolbar.appendChild(
-        LucenComponents.createToolbarPill(
-          context.master.name,
-          false,
-          () => this.goMaster(context.master.id)
+        LucenComponents.createToolbarPill(ctx.master.name, false, () =>
+          this.goMaster(ctx.master.id)
         )
       );
 
-      context.field.modules.forEach(mod => {
+      ctx.field.modules.forEach(mod =>
         this.toolbar.appendChild(
           LucenComponents.createToolbarPill(
             mod.name,
-            context.module && context.module.id === mod.id,
-            () => this.goModule(context.master.id, context.field.id, mod.id)
+            false,
+            () => this.goModule(ctx.master.id, ctx.field.id, mod.id)
           )
-        );
-      });
-    } else if (this.state.level === "module" || this.state.level === "mini") {
+        )
+      );
+      return;
+    }
+
+    if (this.state.level === "module") {
       this.toolbar.appendChild(
-        LucenComponents.createToolbarPill(
-          context.field.name,
-          false,
-          () => this.goField(context.master.id, context.field.id)
+        LucenComponents.createToolbarPill(ctx.field.name, false, () =>
+          this.goField(ctx.master.id, ctx.field.id)
         )
       );
 
-      context.field.modules.forEach(mod => {
+      ctx.field.modules.forEach(mod =>
         this.toolbar.appendChild(
           LucenComponents.createToolbarPill(
             mod.name,
-            context.module && context.module.id === mod.id,
-            () => this.goModule(context.master.id, context.field.id, mod.id)
+            mod.id === ctx.module.id,
+            () => this.goModule(ctx.master.id, ctx.field.id, mod.id)
           )
-        );
-      });
+        )
+      );
+      return;
+    }
+
+    if (this.state.level === "mini") {
+      this.toolbar.appendChild(
+        LucenComponents.createToolbarPill(ctx.module.name, false, () =>
+          this.goModule(ctx.master.id, ctx.field.id, ctx.module.id)
+        )
+      );
+      return;
     }
   },
 
-  /* ===== GLOBAL NAV (FOOTER / OS BAR) ===== */
-
+  /* FOOTER */
   buildFooter() {
     const shell = document.createElement("div");
     shell.className = "footer-shell";
@@ -312,347 +268,275 @@ const LucenOS = {
 
     const sub = document.createElement("div");
     sub.className = "footer-sub";
-    sub.textContent =
-      "OS-level rail. Move between Hub, master fields, settings, modes and support.";
+    sub.textContent = "OS navigation • Modes • Settings";
 
     const rows = document.createElement("div");
     rows.className = "footer-rows";
 
-    // Row 1 – Movement (Hub | Master Fields)
-    const row1 = document.createElement("div");
-    row1.className = "footer-row";
+    /* — Row 1 — */
+    const r1 = document.createElement("div");
+    r1.className = "footer-row";
+    r1.appendChild(this.createFooterButton("Hub", () => this.goCore()));
+    r1.appendChild(
+      this.settings.showMasterFields
+        ? this.createFooterButton("Master Fields", () => this.goCore())
+        : this.createFooterSpacer()
+    );
 
-    const btnHub = this.createFooterButton("Hub", () => this.goCore());
-    row1.appendChild(btnHub);
+    /* — Row 2 — */
+    const r2 = document.createElement("div");
+    r2.className = "footer-row";
+    r2.appendChild(
+      this.settings.showSettings
+        ? this.createFooterButton("Settings", () => alert("Settings – to wire"))
+        : this.createFooterSpacer()
+    );
+    r2.appendChild(
+      this.settings.showModes
+        ? this.createFooterButton("Modes", () => alert("Modes – to wire"))
+        : this.createFooterSpacer()
+    );
 
-    if (this.settings.showMasterFields) {
-      const btnMasters = this.createFooterButton("Master Fields", () => this.goCore());
-      row1.appendChild(btnMasters);
-    } else {
-      row1.appendChild(this.createFooterSpacer());
-    }
-
-    // Row 2 – System control (Settings | Modes)
-    const row2 = document.createElement("div");
-    row2.className = "footer-row";
-
-    if (this.settings.showSettings) {
-      const btnSettings = this.createFooterButton("Settings", () => {
-        // Placeholder – wire to settings panel later
-        alert("Settings panel – to be wired.");
-      });
-      row2.appendChild(btnSettings);
-    } else {
-      row2.appendChild(this.createFooterSpacer());
-    }
-
-    if (this.settings.showModes) {
-      const btnModes = this.createFooterButton("Modes", () => {
-        // Placeholder – wire to modes UI later
-        alert("Modes selector – to be wired.");
-      });
-      row2.appendChild(btnModes);
-    } else {
-      row2.appendChild(this.createFooterSpacer());
-    }
-
-    // Row 3 – External / foundation (Support | Donate)
-    const row3 = document.createElement("div");
-    row3.className = "footer-row";
-
-    if (this.settings.showSupport) {
-      const btnSupport = this.createFooterButton("Support", () => {
-        // Placeholder – link to support/FAQ page later
-        alert("Support / FAQ – to be wired.");
-      });
-      row3.appendChild(btnSupport);
-    } else {
-      row3.appendChild(this.createFooterSpacer());
-    }
+    /* — Row 3 — */
+    const r3 = document.createElement("div");
+    r3.className = "footer-row";
+    r3.appendChild(
+      this.settings.showSupport
+        ? this.createFooterButton("Support", () => alert("Support – to wire"))
+        : this.createFooterSpacer()
+    );
 
     if (this.settings.showDonate) {
       const donate = document.createElement("a");
       donate.href = "https://www.educationalfreedom.uk/donate";
       donate.target = "_blank";
-      donate.rel = "noopener noreferrer";
       donate.className = "footer-link footer-donate";
       donate.textContent = "Donate";
-      row3.appendChild(donate);
-    } else {
-      row3.appendChild(this.createFooterSpacer());
-    }
+      r3.appendChild(donate);
+    } else r3.appendChild(this.createFooterSpacer());
 
-    rows.appendChild(row1);
-    rows.appendChild(row2);
-    rows.appendChild(row3);
+    rows.append(r1, r2, r3);
 
     footer.appendChild(title);
     footer.appendChild(sub);
     footer.appendChild(rows);
-
     shell.appendChild(footer);
     document.body.appendChild(shell);
 
     this.footerShell = shell;
   },
 
-  createFooterButton(label, onClick) {
+  createFooterButton(label, handler) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "footer-link";
     btn.textContent = label;
-    btn.onclick = onClick;
+    btn.onclick = handler;
     return btn;
   },
 
   createFooterSpacer() {
-    const span = document.createElement("div");
-    span.className = "footer-spacer";
-    return span;
+    const d = document.createElement("div");
+    d.className = "footer-spacer";
+    return d;
   },
 
   initFooterMode() {
-    if (!this.footerShell || !this.app) return;
+    const mode = this.settings.footerMode;
 
-    const mode = this.settings.footerMode || "interactive";
-
-    // Ensure sentinel exists at the bottom of scrollable content (above footer)
     if (!this.footerSentinel) {
-      const sentinel = document.createElement("div");
-      sentinel.id = "lucen-footer-trigger";
-      sentinel.style.height = "1px";
-      sentinel.style.width = "100%";
-      this.app.appendChild(sentinel);
-      this.footerSentinel = sentinel;
+      const s = document.createElement("div");
+      s.style.height = "1px";
+      s.id = "lucen-footer-trigger";
+      this.app.appendChild(s);
+      this.footerSentinel = s;
     }
 
-    // Clear any existing observer / scroll handler
-    if (this.footerObserver) {
-      this.footerObserver.disconnect();
-      this.footerObserver = null;
-    }
-    if (this.footerScrollHandler) {
+    if (this.footerObserver) this.footerObserver.disconnect();
+    if (this.footerScrollHandler)
       window.removeEventListener("scroll", this.footerScrollHandler);
-      this.footerScrollHandler = null;
-    }
 
     this.footerShell.classList.remove("footer-static", "visible");
     this.footerVisible = false;
 
     if (mode === "static") {
-      // Always visible, OS-style fixed bar
-      this.footerShell.classList.add("visible", "footer-static");
+      this.footerShell.classList.add("footer-static", "visible");
       return;
     }
 
-    // Shared IntersectionObserver for "interactive" and "reveal"
-    const observer = new IntersectionObserver(
+    const obs = new IntersectionObserver(
       entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            // Bottom reached → reveal footer
+        entries.forEach(e => {
+          if (e.isIntersecting) {
             this.footerShell.classList.add("visible");
             this.footerVisible = true;
-            this.footerLastRevealScrollY = window.scrollY || 0;
-          } else {
-            if (mode === "reveal") {
-              // In reveal mode, hide when sentinel leaves viewport
-              this.footerShell.classList.remove("visible");
-              this.footerVisible = false;
-            }
-            // In interactive mode, hide is handled via scroll listener
+            this.footerLastRevealScrollY = window.scrollY;
+          } else if (mode === "reveal") {
+            this.footerShell.classList.remove("visible");
+            this.footerVisible = false;
           }
         });
       },
       { threshold: 0.1 }
     );
 
-    observer.observe(this.footerSentinel);
-    this.footerObserver = observer;
-    this.footerModeActive = mode;
+    obs.observe(this.footerSentinel);
+    this.footerObserver = obs;
 
-    // Interactive mode: hide after scrolling UP by threshold
     if (mode === "interactive") {
-      const threshold = this.settings.footerHideThreshold || 80;
-      this.footerLastScrollY = window.scrollY || 0;
+      const th = this.settings.footerHideThreshold;
+      this.footerLastScrollY = window.scrollY;
 
       this.footerScrollHandler = () => {
-        const current = window.scrollY || 0;
-        const delta = current - this.footerLastScrollY;
+        const now = window.scrollY;
+        const delta = now - this.footerLastScrollY;
 
-        // Scrolling up
         if (delta < 0 && this.footerVisible) {
-          const travelUp = this.footerLastScrollY - current;
-          if (travelUp >= threshold) {
+          if (this.footerLastScrollY - now >= th) {
             this.footerShell.classList.remove("visible");
             this.footerVisible = false;
           }
         }
 
-        this.footerLastScrollY = current;
+        this.footerLastScrollY = now;
       };
 
       window.addEventListener("scroll", this.footerScrollHandler, { passive: true });
     }
   },
 
-  /* ===== NAV HELPERS (ALL ROUTES GO THROUGH setState) ===== */
-
+  /* NAVIGATION */
   navigateUp() {
-    const { level, masterId, fieldId, moduleId } = this.state;
+    const s = this.state;
 
-    if (level === "mini") {
-      this.setState(
-        { level: "module", masterId, fieldId, moduleId, miniId: null },
+    if (s.level === "mini")
+      return this.setState(
+        { level: "module", masterId: s.masterId, fieldId: s.fieldId, moduleId: s.moduleId },
         true
       );
-    } else if (level === "module") {
-      this.setState(
-        { level: "field", masterId, fieldId, moduleId: null, miniId: null },
+
+    if (s.level === "module")
+      return this.setState(
+        { level: "field", masterId: s.masterId, fieldId: s.fieldId },
         true
       );
-    } else if (level === "field") {
-      this.setState(
-        { level: "master", masterId, fieldId: null, moduleId: null, miniId: null },
-        true
-      );
-    } else if (level === "master") {
-      this.setState(
-        { level: "core", masterId: null, fieldId: null, moduleId: null, miniId: null },
-        true
-      );
-    } else {
-      // Already at Hub
-    }
+
+    if (s.level === "field")
+      return this.setState({ level: "master", masterId: s.masterId }, true);
+
+    if (s.level === "master")
+      return this.setState({ level: "core" }, true);
   },
 
   goCore() {
+    this.setState({ level: "core" }, true);
+  },
+  goMaster(id) {
+    this.setState({ level: "master", masterId: id }, true);
+  },
+  goField(mid, fid) {
+    this.setState({ level: "field", masterId: mid, fieldId: fid }, true);
+  },
+  goModule(mid, fid, mod) {
+    this.setState({ level: "module", masterId: mid, fieldId: fid, moduleId: mod }, true);
+  },
+  goMini(mid, fid, mod, mini) {
     this.setState(
-      { level: "core", masterId: null, fieldId: null, moduleId: null, miniId: null },
+      { level: "mini", masterId: mid, fieldId: fid, moduleId: mod, miniId: mini },
       true
     );
   },
 
-  goMaster(masterId) {
-    this.setState(
-      { level: "master", masterId, fieldId: null, moduleId: null, miniId: null },
-      true
-    );
-  },
-
-  goField(masterId, fieldId) {
-    this.setState(
-      { level: "field", masterId, fieldId, moduleId: null, miniId: null },
-      true
-    );
-  },
-
-  goModule(masterId, fieldId, moduleId) {
-    this.setState(
-      { level: "module", masterId, fieldId, moduleId, miniId: null },
-      true
-    );
-  },
-
-  goMini(masterId, fieldId, moduleId, miniId) {
-    this.setState(
-      { level: "mini", masterId, fieldId, moduleId, miniId },
-      true
-    );
-  },
-
-  /* ===== WORLD LOOKUPS ===== */
-
+  /* LOOKUPS */
   getContext() {
     const W = window.LucenWorld;
-    let master = null,
-      field = null,
-      module = null,
-      mini = null;
 
-    if (this.state.masterId) {
-      master = W.masterFields.find(m => m.id === this.state.masterId) || null;
-    }
-    if (master && this.state.fieldId) {
-      field = master.fields.find(f => f.id === this.state.fieldId) || null;
-    }
-    if (field && this.state.moduleId) {
-      module = field.modules.find(m => m.id === this.state.moduleId) || null;
-    }
-    if (module && this.state.miniId) {
-      mini = module.minis.find(mm => mm.id === this.state.miniId) || null;
-    }
+    const m = this.state.masterId
+      ? W.masterFields.find(x => x.id === this.state.masterId)
+      : null;
 
-    return { master, field, module, mini };
+    const f = m && this.state.fieldId ? m.fields.find(x => x.id === this.state.fieldId) : null;
+
+    const mod =
+      f && this.state.moduleId ? f.modules.find(x => x.id === this.state.moduleId) : null;
+
+    const mini =
+      mod && this.state.miniId ? mod.minis.find(x => x.id === this.state.miniId) : null;
+
+    return { master: m, field: f, module: mod, mini };
   },
 
-  /* ===== RENDER ===== */
-
+  /* RENDER */
   render() {
     const W = window.LucenWorld;
     const ctx = this.getContext();
 
-    // Update Local Nav (header)
     this.updateHeader(ctx);
-
-    // Clear main area
     this.app.innerHTML = "";
 
     const view = document.createElement("div");
     view.className = "view active";
 
     if (this.state.level === "core") {
-      const grid = document.createElement("div");
-      grid.className = "grid";
+      const g = document.createElement("div");
+      g.className = "grid";
 
-      W.masterFields.forEach(mf => {
-        const card = LucenComponents.createCard({
-          title: mf.name,
-          summary: mf.short,
-          meta: `Fields: ${mf.fields.length}`,
-          buttonLabel: "Open master field",
-          onOpen: () => this.goMaster(mf.id)
-        });
-        grid.appendChild(card);
-      });
+      W.masterFields.forEach(mf =>
+        g.appendChild(
+          LucenComponents.createCard({
+            title: mf.name,
+            summary: mf.short,
+            meta: `Fields: ${mf.fields.length}`,
+            buttonLabel: "Open master field",
+            onOpen: () => this.goMaster(mf.id)
+          })
+        )
+      );
 
-      view.appendChild(grid);
-    } else if (this.state.level === "master" && ctx.master) {
-      const grid = document.createElement("div");
-      grid.className = "grid";
+      view.appendChild(g);
+    }
 
-      ctx.master.fields.forEach(f => {
-        const card = LucenComponents.createCard({
-          title: f.name,
-          summary: f.short,
-          meta: `Modules: ${f.modules.length}`,
-          buttonLabel: "Open field",
-          onOpen: () => this.goField(ctx.master.id, f.id)
-        });
-        grid.appendChild(card);
-      });
+    else if (this.state.level === "master" && ctx.master) {
+      const g = document.createElement("div");
+      g.className = "grid";
 
-      view.appendChild(grid);
-    } else if (this.state.level === "field" && ctx.master && ctx.field) {
-      const grid = document.createElement("div");
-      grid.className = "grid";
+      ctx.master.fields.forEach(f =>
+        g.appendChild(
+          LucenComponents.createCard({
+            title: f.name,
+            summary: f.short,
+            meta: `Modules: ${f.modules.length}`,
+            buttonLabel: "Open field",
+            onOpen: () => this.goField(ctx.master.id, f.id)
+          })
+        )
+      );
 
-      ctx.field.modules.forEach(mod => {
-        const card = LucenComponents.createCard({
-          title: mod.name,
-          summary: mod.short,
-          meta: `Mini modules: ${mod.minis.length}`,
-          buttonLabel: "Open module",
-          onOpen: () =>
-            this.goModule(ctx.master.id, ctx.field.id, mod.id)
-        });
-        grid.appendChild(card);
-      });
+      view.appendChild(g);
+    }
 
-      view.appendChild(grid);
-    } else if (this.state.level === "module" && ctx.master && ctx.field && ctx.module) {
-      const grid = document.createElement("div");
-      grid.className = "grid";
+    else if (this.state.level === "field" && ctx.field) {
+      const g = document.createElement("div");
+      g.className = "grid";
+
+      ctx.field.modules.forEach(mod =>
+        g.appendChild(
+          LucenComponents.createCard({
+            title: mod.name,
+            summary: mod.short,
+            meta: `Mini modules: ${mod.minis.length}`,
+            buttonLabel: "Open module",
+            onOpen: () => this.goModule(ctx.master.id, ctx.field.id, mod.id)
+          })
+        )
+      );
+
+      view.appendChild(g);
+    }
+
+    else if (this.state.level === "module" && ctx.module) {
+      const g = document.createElement("div");
+      g.className = "grid";
 
       const card = LucenComponents.createCard({
         title: ctx.module.name,
@@ -662,37 +546,51 @@ const LucenOS = {
         onOpen: () => this.goField(ctx.master.id, ctx.field.id)
       });
 
-      const miniList = document.createElement("div");
-      miniList.className = "mini-list";
+      const list = document.createElement("div");
+      list.className = "mini-list";
 
       ctx.module.minis.forEach(mm => {
         const row = document.createElement("div");
         row.className = "mini-item";
 
-        const left = document.createElement("div");
-        left.className = "mini-name";
-        left.textContent = mm.name;
+        const name = document.createElement("div");
+        name.className = "mini-name";
+        name.textContent = mm.name;
 
-        const right = document.createElement("div");
-        right.className = "mini-body";
-        right.textContent = mm.body;
+        const body = document.createElement("div");
+        body.className = "mini-body";
+        body.textContent = mm.body;
 
-        row.appendChild(left);
-        row.appendChild(right);
+        row.append(name, body);
 
         row.onclick = () =>
           this.goMini(ctx.master.id, ctx.field.id, ctx.module.id, mm.id);
 
-        miniList.appendChild(row);
+        list.appendChild(row);
       });
 
-      card.appendChild(miniList);
-      grid.appendChild(card);
-      view.appendChild(grid);
-    } else if (this.state.level === "mini" && ctx.mini && ctx.module && ctx.field && ctx.master) {
-      const grid = document.createElement("div");
-      grid.className = "grid";
+      card.appendChild(list);
+      g.appendChild(card);
+      view.appendChild(g);
+    }
+
+    else if (this.state.level === "mini" && ctx.mini) {
+      const g = document.createElement("div");
+      g.className = "grid";
 
       const card = LucenComponents.createCard({
         title: ctx.mini.name,
-        summary:
+        summary: ctx.mini.body,
+        meta: "",
+        buttonLabel: "Back to module",
+        onOpen: () =>
+          this.goModule(ctx.master.id, ctx.field.id, ctx.module.id)
+      });
+
+      g.appendChild(card);
+      view.appendChild(g);
+    }
+
+    this.app.appendChild(view);
+  }
+};
