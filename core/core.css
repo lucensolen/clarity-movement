@@ -274,80 +274,114 @@ body {
   transform: translateY(0);
 }
 
-/* GLOBAL NAV FOOTER (updated) */
-.global-footer {
+/* ————————————————
+   GLOBAL NAV (FOOTER) – FINAL MATCHED VERSION
+   (3 rows × 2, compact, with reveal divider)
+——————————————— */
+
+.footer-shell {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--footer-bg);
-  color: var(--footer-text);
-  padding: 18px 20px 26px;
-  box-shadow: 0 -20px 40px rgba(0,0,0,0.35);
-  border-radius: 26px 26px 0 0;
-  transform: translateY(100%);
-  transition: transform 280ms ease-out;
-  z-index: 1000;
+  padding: 0 14px 12px;
+  z-index: 9990;
+  pointer-events: none;
 }
 
-.global-footer.visible {
+.footer {
+  background: #0f151a;
+  border-radius: 26px 26px 0 0;
+  padding: 22px 18px 30px;
+  box-shadow: 0 -22px 40px rgba(0,0,0,0.35);
+  transform: translateY(100%);
+  transition: transform 260ms ease;
+  pointer-events: auto;
+}
+
+.footer-shell.visible .footer {
   transform: translateY(0);
 }
 
-/* Footer title */
-.footer-title {
-  font-size: 15px;
-  margin-bottom: 10px;
-  color: var(--footer-text);
-  font-weight: 600;
+.footer-static .footer {
+  transform: translateY(0);
 }
 
-/* Notch dividers between rows */
+/* Title + subtitle */
+.footer-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--footer-text);
+}
+
+.footer-sub {
+  font-size: 11px;
+  opacity: 0.62;
+  margin-bottom: 18px;
+  color: var(--footer-text);
+}
+
+/* Rows (3×2) */
+.footer-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 .footer-row {
   display: flex;
-  justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
-  padding-bottom: 12px;
   position: relative;
+  padding-bottom: 14px;
 }
 
 .footer-row:not(:last-child)::after {
   content: "";
   position: absolute;
-  left: 10%;
-  right: 10%;
+  left: 6%;
+  right: 6%;
   bottom: 0;
   height: 1px;
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 -3px 6px rgba(0,0,0,0.32);
+  background: rgba(255,255,255,0.08);
+  box-shadow: inset 0 -4px 6px rgba(0,0,0,0.44);
 }
 
-/* Footer buttons */
-.footer-btn {
+/* Button base */
+.footer-link,
+.footer-spacer {
   flex: 1;
-  text-align: center;
+}
+
+.footer-link {
   padding: 10px 0;
-  border-radius: var(--radius-pill);
-  background: #172127;
-  color: var(--footer-text);
   border: 1px solid rgba(255,255,255,0.08);
+  background: #182026;
+  border-radius: var(--radius-pill);
+  color: var(--footer-text);
   font-size: 13px;
-  text-decoration: none;
+  text-align: center;
   cursor: pointer;
+  text-decoration: none;
 }
 
-.footer-btn:hover {
-  background: #1d2830;
+.footer-link:hover {
+  background: #1f2930;
 }
 
-/* Donate button override */
-.footer-btn.donate {
+/* Donate pill */
+.footer-donate {
   background: var(--footer-accent);
-  color: #041d14;
-  border-color: #0e4335;
+  color: #041c12;
+  border-color: #1a433d;
 }
 
-.footer-btn.donate:hover {
-  background: #45c9b8;
+.footer-donate:hover {
+  background: #3cc2ab;
+}
+
+/* Spacer for absent buttons */
+.footer-spacer {
+  opacity: 0;
+  pointer-events: none;
 }
