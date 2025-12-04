@@ -218,6 +218,32 @@ body {
   transform: translateY(0%) !important;
 }
 
+/* Footer wrapper (controls slide + visibility) */
+.footer-shell {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0 12px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  z-index: 999;
+}
+
+.footer-shell.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.footer-shell.footer-static {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+  pointer-events: auto !important;
+}
+
 .footer {
   background: var(--footer-bg);
   color: var(--footer-text);
