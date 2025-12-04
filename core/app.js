@@ -342,68 +342,79 @@ const LucenOS = {
   },
 
   initFooterMode() {
-    const mode = this.settings.footerMode;
+  const mode = this.settings.footerMode;
 
-    if (!this.footerSentinel) {
-      const s = document.createElement("div");
-      s.style.height = "1px";
-      s.id = "lucen-footer-trigger";
-      this.app.appendChild(s);
-      this.footerSentinel = s;
-    }
+  // Create sentinel if missing
+  if (!this.footerSentinel) {
+    const s = document.createElement("div");
+    s.style.height = "1px";
+    s.id = "lucen-footer-trigger";
+    this.app.appendChild(s);
+    this.footerSentinel = s;
+  }
 
-    if (this.footerObserver) this.footerObserver.disconnect();
-    if (this.footerScrollHandler)
-      window.removeEventListener("scroll", this.footerScrollHandler);
+  // Clean up previous handlers
+  if (this.footerObserver) {
+    this.footerObserver.disconnect();
+    this.footerObserver = null;
+  }
+  if (this.footerScrollHandler) {
+    window.removeEventListener("scroll", this.footerScrollHandler);
+    this.footerScrollHandler = null;
+  }
 
-    this.footerShell.classList.remove("footer-static", "visible");
-    this.footerVisible = false;
+  this.footerShell.classList.remove("footer-static", "visible");
+  this.footerVisible = false;
 
-    if (mode === "static") {
-      this.footerShell.classList.add("footer-static", "visible");
-      return;
-    }
+  // STATIC MODE = always visible
+  if (mode === "static") {
+    this.footerShell.classList.add("footer-static", "visible");
+    return;
+  }
 
-    const obs = new IntersectionObserver(
-      entries => {
-        entries.forEach(e => {
-          if (e.isIntersecting) {
-            this.footerShell.classList.add("visible");
-            this.footerVisible = true;
-            this.footerLastRevealScrollY = window.scrollY;
-          } else if (mode === "reveal") {
-            this.footerShell.classList.remove("visible");
-            this.footerVisible = false;
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    obs.observe(this.footerSentinel);
-    this.footerObserver = obs;
-
-    if (mode === "interactive") {
-      const th = this.settings.footerHideThreshold;
-      this.footerLastScrollY = window.scrollY;
-
-      this.footerScrollHandler = () => {
-        const now = window.scrollY;
-        const delta = now - this.footerLastScrollY;
-
-        if (delta < 0 && this.footerVisible) {
-          if (this.footerLastScrollY - now >= th) {
-            this.footerShell.classList.remove("visible");
-            this.footerVisible = false;
-          }
+  // Observer for interactive + reveal
+  const obs = new IntersectionObserver(
+    entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          this.footerShell.classList.add("visible");
+          this.footerVisible = true;
+        } else if (mode === "reveal") {
+          this.footerShell.classList.remove("visible");
+          this.footerVisible = false;
         }
+      });
+    },
+    { threshold: 0.1 }
+  );
 
-        this.footerLastScrollY = now;
-      };
+  obs.observe(this.footerSentinel);
+  this.footerObserver = obs;
 
-      window.addEventListener("scroll", this.footerScrollHandler, { passive: true });
-    }
-  },
+  // INTERACTIVE MODE extra scrolling logic
+  if (mode === "interactive") {
+    const th = this.settings.footerHideThreshold;
+    this.footerLastScrollY = window.scrollY;
+
+    this.footerScrollHandler = () => {
+      const now = window.scrollY;
+      const delta = now - this.footerLastScrollY;
+
+      // Scrolling up hides footer
+      if (delta < 0 && this.footerVisible) {
+        if ((this.footerLastScrollY - now) >= th) {
+          this.footerShell.classList.remove("visible");
+          this.footerVisible = false;
+        }
+      }
+
+      this.footerLastScrollY = now;
+    };
+
+    // FIX → only attach listener if it exists
+    window.addEventListener("scroll", this.footerScrollHandler, { passive: true });
+  }
+  }
 
   /* NAVIGATION */
   navigateUp() {
