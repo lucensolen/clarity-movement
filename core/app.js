@@ -1,20 +1,15 @@
 /* ______________________________
    LUCEN OS – NEUTRAL RUNTIME ENGINE
-   Local Nav (header) + Global Nav (footer)
-   Now with footer modes: interactive / reveal / static
+   With hash routing + Local Nav + Global Nav modes
 ________________________________ */
 
-// Global settings – tweak per OS build.
+// Global settings – tweak these per OS build.
 const LucenOS = {
   settings: {
-    // "interactive" = original drawer: appears at bottom, hides on scroll up
-    // "reveal"      = shows while bottom sentinel is in view
-    // "static"      = always visible
-    footerMode: "interactive",
+    // "reveal" = slide up at bottom, "static" = always visible
+    footerMode: "reveal",
 
-    // How far you must scroll UP (px) before interactive footer hides
-    footerHideThreshold: 80,
-
+    // Theme toggle hook (right now just semantic; can wire to skin later)
     theme: "rich-neutral",
 
     // Toggle which Global Nav buttons show
@@ -318,7 +313,7 @@ const LucenOS = {
     const rows = document.createElement("div");
     rows.className = "footer-rows";
 
-    // Row 1 – Movement (Hub | Master Fields)
+    // Row 1 – Movement
     const row1 = document.createElement("div");
     row1.className = "footer-row";
 
@@ -328,11 +323,9 @@ const LucenOS = {
     if (this.settings.showMasterFields) {
       const btnMasters = this.createFooterButton("Master Fields", () => this.goCore());
       row1.appendChild(btnMasters);
-    } else {
-      row1.appendChild(this.createFooterSpacer());
     }
 
-    // Row 2 – System control (Settings | Modes)
+    // Row 2 – System control
     const row2 = document.createElement("div");
     row2.className = "footer-row";
 
@@ -342,8 +335,6 @@ const LucenOS = {
         alert("Settings panel – to be wired.");
       });
       row2.appendChild(btnSettings);
-    } else {
-      row2.appendChild(this.createFooterSpacer());
     }
 
     if (this.settings.showModes) {
@@ -352,11 +343,9 @@ const LucenOS = {
         alert("Modes selector – to be wired.");
       });
       row2.appendChild(btnModes);
-    } else {
-      row2.appendChild(this.createFooterSpacer());
     }
 
-    // Row 3 – External / foundation (Support | Donate)
+    // Row 3 – External / foundation
     const row3 = document.createElement("div");
     row3.className = "footer-row";
 
@@ -366,8 +355,6 @@ const LucenOS = {
         alert("Support / FAQ – to be wired.");
       });
       row3.appendChild(btnSupport);
-    } else {
-      row3.appendChild(this.createFooterSpacer());
     }
 
     if (this.settings.showDonate) {
@@ -378,8 +365,6 @@ const LucenOS = {
       donate.className = "footer-link footer-donate";
       donate.textContent = "Donate";
       row3.appendChild(donate);
-    } else {
-      row3.appendChild(this.createFooterSpacer());
     }
 
     rows.appendChild(row1);
@@ -405,94 +390,50 @@ const LucenOS = {
     return btn;
   },
 
-  createFooterSpacer() {
-    const span = document.createElement("div");
-    span.className = "footer-spacer";
-    return span;
-  },
-
   initFooterMode() {
-    if (!this.footerShell || !this.app) return;
+    // Ensure we have a footer
+    if (!this.footerShell) return;
 
-    const mode = this.settings.footerMode || "interactive";
+    const mode = this.settings.footerMode || "reveal";
 
-    // Ensure sentinel exists at the bottom of scrollable content (above footer)
+    // Ensure sentinel exists
     if (!this.footerSentinel) {
       const sentinel = document.createElement("div");
       sentinel.id = "lucen-footer-trigger";
       sentinel.style.height = "1px";
       sentinel.style.width = "100%";
-      this.app.appendChild(sentinel);
+      document.body.appendChild(sentinel);
       this.footerSentinel = sentinel;
     }
 
-    // Clear any existing observer / scroll handler
+    // Clear any existing observer
     if (this.footerObserver) {
       this.footerObserver.disconnect();
       this.footerObserver = null;
     }
-    if (this.footerScrollHandler) {
-      window.removeEventListener("scroll", this.footerScrollHandler);
-      this.footerScrollHandler = null;
-    }
-
-    this.footerShell.classList.remove("footer-static", "visible");
-    this.footerVisible = false;
 
     if (mode === "static") {
       // Always visible, OS-style fixed bar
       this.footerShell.classList.add("visible", "footer-static");
-      return;
-    }
+    } else {
+      // Reveal mode – slide up when reaching bottom trigger
+      this.footerShell.classList.remove("footer-static");
 
-    // Shared IntersectionObserver for "interactive" and "reveal"
-    const observer = new IntersectionObserver(
-      entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            // Bottom reached → reveal footer
-            this.footerShell.classList.add("visible");
-            this.footerVisible = true;
-            this.footerLastRevealScrollY = window.scrollY || 0;
-          } else {
-            if (mode === "reveal") {
-              // In reveal mode, hide when sentinel leaves viewport
+      const observer = new IntersectionObserver(
+        entries => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              this.footerShell.classList.add("visible");
+            } else {
               this.footerShell.classList.remove("visible");
-              this.footerVisible = false;
             }
-            // In interactive mode, hide is handled via scroll listener
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
+          });
+        },
+        { threshold: 0.1 }
+      );
 
-    observer.observe(this.footerSentinel);
-    this.footerObserver = observer;
-    this.footerModeActive = mode;
-
-    // Interactive mode: hide after scrolling UP by threshold
-    if (mode === "interactive") {
-      const threshold = this.settings.footerHideThreshold || 80;
-      this.footerLastScrollY = window.scrollY || 0;
-
-      this.footerScrollHandler = () => {
-        const current = window.scrollY || 0;
-        const delta = current - this.footerLastScrollY;
-
-        // Scrolling up
-        if (delta < 0 && this.footerVisible) {
-          const travelUp = this.footerLastScrollY - current;
-          if (travelUp >= threshold) {
-            this.footerShell.classList.remove("visible");
-            this.footerVisible = false;
-          }
-        }
-
-        this.footerLastScrollY = current;
-      };
-
-      window.addEventListener("scroll", this.footerScrollHandler, { passive: true });
+      observer.observe(this.footerSentinel);
+      this.footerObserver = observer;
     }
   },
 
@@ -695,4 +636,17 @@ const LucenOS = {
 
       const card = LucenComponents.createCard({
         title: ctx.mini.name,
-        summary: 
+        summary: ctx.mini.body,
+        meta: `${ctx.master.name} • ${ctx.field.name} • ${ctx.module.name}`,
+        buttonLabel: "Back to module",
+        onOpen: () =>
+          this.goModule(ctx.master.id, ctx.field.id, ctx.module.id)
+      });
+
+      grid.appendChild(card);
+      view.appendChild(grid);
+    }
+
+    this.app.appendChild(view);
+  }
+};       
