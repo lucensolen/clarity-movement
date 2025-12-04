@@ -1,9 +1,25 @@
-/* ______________________________
+   /* ______________________________
    LUCEN OS – NEUTRAL RUNTIME ENGINE
-   With hash routing + in-app back
+   With hash routing + Local Nav + Global Nav modes
 ________________________________ */
 
+// Global settings – tweak these per OS build.
 const LucenOS = {
+  settings: {
+    // "reveal" = slide up at bottom, "static" = always visible
+    footerMode: "reveal",
+
+    // Theme toggle hook (right now just semantic; can wire to skin later)
+    theme: "rich-neutral",
+
+    // Toggle which Global Nav buttons show
+    showMasterFields: true,
+    showSettings: true,
+    showModes: true,
+    showSupport: true,
+    showDonate: true
+  },
+
   state: {
     level: "core",   // "core" | "master" | "field" | "module" | "mini"
     masterId: null,
@@ -15,14 +31,15 @@ const LucenOS = {
   initNeutral() {
     this.app = document.getElementById("app");
 
-    // Build header + footer shells
+    // Build Local Nav (header) + Global Nav (footer)
     this.buildHeader();
     this.buildFooter();
+    this.initFooterMode();
 
     // Routing: listen to hash changes
     window.addEventListener("hashchange", () => this.applyRouteFromHash());
 
-    // On first load: use hash if present, else core
+    // On first load: use hash if present, else Hub (core)
     if (location.hash && location.hash.length > 1) {
       this.applyRouteFromHash();
     } else {
@@ -31,19 +48,11 @@ const LucenOS = {
         true
       );
     }
-
-    this.setupScrollFooter();
   },
 
   /* ===== ROUTING UTILITIES ===== */
 
   encodeRoute(state) {
-    // Simple pipe-based route in the hash
-    // core
-    // master|mfId
-    // field|mfId|fieldId
-    // module|mfId|fieldId|modId
-    // mini|mfId|fieldId|modId|miniId
     const { level, masterId, fieldId, moduleId, miniId } = state;
 
     if (level === "core") return "#core";
@@ -129,7 +138,7 @@ const LucenOS = {
     if (pushHistory) {
       const targetHash = this.encodeRoute(this.state);
       if (location.hash !== targetHash) {
-        location.hash = targetHash; // this will fire hashchange but route will just re-apply same state
+        location.hash = targetHash;
       }
     }
 
@@ -137,7 +146,7 @@ const LucenOS = {
     window.scrollTo({ top: 0, behavior: "instant" });
   },
 
-  /* ===== HEADER ===== */
+  /* ===== LOCAL NAV (HEADER) ===== */
 
   buildHeader() {
     const shell = document.createElement("div");
@@ -146,7 +155,7 @@ const LucenOS = {
     const header = document.createElement("div");
     header.className = "header";
 
-    // Row with back button + title block
+    // Back + title + breadcrumbs
     const topRow = document.createElement("div");
     topRow.className = "header-top-row";
 
@@ -154,7 +163,6 @@ const LucenOS = {
     backBtn.type = "button";
     backBtn.className = "btn header-back";
     backBtn.textContent = "Back";
-    backBtn.style.marginBottom = "6px";
     backBtn.onclick = () => this.navigateUp();
 
     const top = document.createElement("div");
@@ -162,11 +170,11 @@ const LucenOS = {
 
     const title = document.createElement("div");
     title.className = "header-title";
-    title.textContent = "Clarity Movement Core";
+    title.textContent = "Hub – Clarity Movement";
 
     const sub = document.createElement("div");
     sub.className = "header-sub";
-    sub.textContent = "Multi-field skeleton • Core layer";
+    sub.textContent = "Multi-field skeleton • Local Nav within this universe";
 
     const pos = document.createElement("div");
     pos.className = "header-pos";
@@ -176,8 +184,6 @@ const LucenOS = {
     top.appendChild(sub);
     top.appendChild(pos);
 
-    topRow.style.display = "flex";
-    topRow.style.flexDirection = "column";
     topRow.appendChild(backBtn);
     topRow.appendChild(top);
 
@@ -199,12 +205,12 @@ const LucenOS = {
   updateHeader(context) {
     const isCore = this.state.level === "core";
 
-    // Back button visible on everything except core
+    // Back only when not at Hub
     if (this.backButton) {
       this.backButton.style.display = isCore ? "none" : "inline-flex";
     }
 
-    // Position breadcrumb text
+    // Breadcrumb text
     const parts = [];
     if (context.master) parts.push(context.master.name);
     if (context.field) parts.push(context.field.name);
@@ -212,13 +218,13 @@ const LucenOS = {
     if (context.mini) parts.push(context.mini.name);
 
     const levelLabel = this.state.level.toUpperCase();
-    const path = parts.length ? parts.join(" / ") : "Core Field";
+    const path = parts.length ? parts.join(" / ") : "Hub";
 
     if (this.headerPos) {
       this.headerPos.textContent = `${levelLabel} • ${path}`;
     }
 
-    // Rebuild toolbar pills based on level
+    // Toolbar pills (local navigation choices)
     this.toolbar.innerHTML = "";
 
     const WC = window.LucenWorld;
@@ -235,7 +241,7 @@ const LucenOS = {
       });
     } else if (this.state.level === "master") {
       this.toolbar.appendChild(
-        LucenComponents.createToolbarPill("Core overview", false, () => this.goCore())
+        LucenComponents.createToolbarPill("Hub", false, () => this.goCore())
       );
 
       context.master.fields.forEach(f => {
@@ -286,7 +292,7 @@ const LucenOS = {
     }
   },
 
-  /* ===== FOOTER ===== */
+  /* ===== GLOBAL NAV (FOOTER / OS BAR) ===== */
 
   buildFooter() {
     const shell = document.createElement("div");
@@ -297,42 +303,77 @@ const LucenOS = {
 
     const title = document.createElement("div");
     title.className = "footer-title";
-    title.textContent = "Clarity Movement – Core Field (c)";
+    title.textContent = "Global Nav – Lucen Hub";
 
     const sub = document.createElement("div");
     sub.className = "footer-sub";
     sub.textContent =
-      "You are at the top layer of your ecosystem. Each Master Field can host its own worlds.";
+      "OS-level rail. Move between Hub, master fields, settings, modes and support.";
 
-    const links = document.createElement("div");
-    links.className = "footer-links";
+    const rows = document.createElement("div");
+    rows.className = "footer-rows";
 
-    const coreBtn = document.createElement("button");
-    coreBtn.type = "button";
-    coreBtn.className = "footer-link";
-    coreBtn.textContent = "Core Field";
-    coreBtn.onclick = () => this.goCore();
+    // Row 1 – Movement
+    const row1 = document.createElement("div");
+    row1.className = "footer-row";
 
-    const mastersBtn = document.createElement("button");
-    mastersBtn.type = "button";
-    mastersBtn.className = "footer-link";
-    mastersBtn.textContent = "All Master Fields";
-    mastersBtn.onclick = () => this.goCore();
+    const btnHub = this.createFooterButton("Hub", () => this.goCore());
+    row1.appendChild(btnHub);
 
-    const donate = document.createElement("a");
-    donate.href = "https://www.educationalfreedom.uk/donate";
-    donate.target = "_blank";
-    donate.rel = "noopener noreferrer";
-    donate.className = "footer-link footer-donate";
-    donate.textContent = "Donate to Educational Freedom";
+    if (this.settings.showMasterFields) {
+      const btnMasters = this.createFooterButton("Master Fields", () => this.goCore());
+      row1.appendChild(btnMasters);
+    }
 
-    links.appendChild(coreBtn);
-    links.appendChild(mastersBtn);
-    links.appendChild(donate);
+    // Row 2 – System control
+    const row2 = document.createElement("div");
+    row2.className = "footer-row";
+
+    if (this.settings.showSettings) {
+      const btnSettings = this.createFooterButton("Settings", () => {
+        // Placeholder – wire to settings panel later
+        alert("Settings panel – to be wired.");
+      });
+      row2.appendChild(btnSettings);
+    }
+
+    if (this.settings.showModes) {
+      const btnModes = this.createFooterButton("Modes", () => {
+        // Placeholder – wire to modes UI later
+        alert("Modes selector – to be wired.");
+      });
+      row2.appendChild(btnModes);
+    }
+
+    // Row 3 – External / foundation
+    const row3 = document.createElement("div");
+    row3.className = "footer-row";
+
+    if (this.settings.showSupport) {
+      const btnSupport = this.createFooterButton("Support", () => {
+        // Placeholder – link to support/FAQ page later
+        alert("Support / FAQ – to be wired.");
+      });
+      row3.appendChild(btnSupport);
+    }
+
+    if (this.settings.showDonate) {
+      const donate = document.createElement("a");
+      donate.href = "https://www.educationalfreedom.uk/donate";
+      donate.target = "_blank";
+      donate.rel = "noopener noreferrer";
+      donate.className = "footer-link footer-donate";
+      donate.textContent = "Donate";
+      row3.appendChild(donate);
+    }
+
+    rows.appendChild(row1);
+    rows.appendChild(row2);
+    rows.appendChild(row3);
 
     footer.appendChild(title);
     footer.appendChild(sub);
-    footer.appendChild(links);
+    footer.appendChild(rows);
 
     shell.appendChild(footer);
     document.body.appendChild(shell);
@@ -340,20 +381,60 @@ const LucenOS = {
     this.footerShell = shell;
   },
 
-  setupScrollFooter() {
-    const onScroll = () => {
-      const scrollBottom = window.scrollY + window.innerHeight;
-      const docHeight = document.documentElement.scrollHeight;
+  createFooterButton(label, onClick) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "footer-link";
+    btn.textContent = label;
+    btn.onclick = onClick;
+    return btn;
+  },
 
-      if (scrollBottom >= docHeight - 40) {
-        this.footerShell.classList.add("visible");
-      } else {
-        this.footerShell.classList.remove("visible");
-      }
-    };
+  initFooterMode() {
+    // Ensure we have a footer
+    if (!this.footerShell) return;
 
-    window.addEventListener("scroll", onScroll);
-    onScroll();
+    const mode = this.settings.footerMode || "reveal";
+
+    // Ensure sentinel exists
+    if (!this.footerSentinel) {
+      const sentinel = document.createElement("div");
+      sentinel.id = "lucen-footer-trigger";
+      sentinel.style.height = "1px";
+      sentinel.style.width = "100%";
+      document.body.appendChild(sentinel);
+      this.footerSentinel = sentinel;
+    }
+
+    // Clear any existing observer
+    if (this.footerObserver) {
+      this.footerObserver.disconnect();
+      this.footerObserver = null;
+    }
+
+    if (mode === "static") {
+      // Always visible, OS-style fixed bar
+      this.footerShell.classList.add("visible", "footer-static");
+    } else {
+      // Reveal mode – slide up when reaching bottom trigger
+      this.footerShell.classList.remove("footer-static");
+
+      const observer = new IntersectionObserver(
+        entries => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              this.footerShell.classList.add("visible");
+            } else {
+              this.footerShell.classList.remove("visible");
+            }
+          });
+        },
+        { threshold: 0.1 }
+      );
+
+      observer.observe(this.footerSentinel);
+      this.footerObserver = observer;
+    }
   },
 
   /* ===== NAV HELPERS (ALL ROUTES GO THROUGH setState) ===== */
@@ -362,31 +443,27 @@ const LucenOS = {
     const { level, masterId, fieldId, moduleId } = this.state;
 
     if (level === "mini") {
-      // Back to module
       this.setState(
         { level: "module", masterId, fieldId, moduleId, miniId: null },
         true
       );
     } else if (level === "module") {
-      // Back to field
       this.setState(
         { level: "field", masterId, fieldId, moduleId: null, miniId: null },
         true
       );
     } else if (level === "field") {
-      // Back to master
       this.setState(
         { level: "master", masterId, fieldId: null, moduleId: null, miniId: null },
         true
       );
     } else if (level === "master") {
-      // Back to core
       this.setState(
         { level: "core", masterId: null, fieldId: null, moduleId: null, miniId: null },
         true
       );
     } else {
-      // Already at top; do nothing
+      // Already at Hub
     }
   },
 
@@ -456,7 +533,7 @@ const LucenOS = {
     const W = window.LucenWorld;
     const ctx = this.getContext();
 
-    // Update header (back button + toolbar)
+    // Update Local Nav (header)
     this.updateHeader(ctx);
 
     // Clear main area
