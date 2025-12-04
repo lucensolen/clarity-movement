@@ -6,7 +6,7 @@ ________________________________ */
 
 const LucenOS = {
   settings: {
-    footerMode: "interactive", // interactive | reveal | static
+    footerMode: "static", // interactive | reveal | static
     footerHideThreshold: 80,
     theme: "rich-neutral",
 
