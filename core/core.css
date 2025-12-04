@@ -1,4 +1,4 @@
-/* ——————————————————————————
+  /* ——————————————————————————
    LUCEN OS – CORE RUNTIME CSS
    Rich Neutral Variant
 —————————————————————————— */
@@ -53,7 +53,7 @@ body {
   padding: 24px 16px 140px;
 }
 
-/* HEADER + TOOLBAR */
+/* LOCAL NAV (HEADER) */
 
 .header-shell {
   position: sticky;
@@ -79,6 +79,18 @@ body {
   box-shadow: var(--shadow-soft);
 }
 
+.header-top-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.header-back {
+  align-self: flex-start;
+  padding-inline: 14px;
+  font-size: 12px;
+}
+
 .header-top {
   display: flex;
   flex-direction: column;
@@ -97,7 +109,7 @@ body {
 }
 
 .header-pos {
-  margin-top: 6px;
+  margin-top: 4px;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.14em;
@@ -262,7 +274,7 @@ body {
   transform: translateY(0);
 }
 
-/* FOOTER */
+/* GLOBAL NAV (FOOTER / OS BAR) */
 
 .footer-shell {
   position: fixed;
@@ -276,6 +288,10 @@ body {
 }
 
 .footer-shell.visible {
+  bottom: 0;
+}
+
+.footer-shell.footer-static {
   bottom: 0;
 }
 
@@ -299,12 +315,37 @@ body {
   margin-top: 4px;
 }
 
-.footer-links {
+/* Rows + shadow notches */
+
+.footer-rows {
   margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.footer-row {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  padding: 6px 0;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    inset 0 -1px 0 rgba(0,0,0,0.55);
 }
+
+/* Remove top notch on first row and bottom notch on last row for subtlety */
+.footer-row:first-child {
+  box-shadow:
+    inset 0 -1px 0 rgba(0,0,0,0.55);
+}
+
+.footer-row:last-child {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* Footer buttons */
 
 .footer-link {
   padding: 8px 14px;
@@ -329,4 +370,4 @@ body {
 
 .footer-donate:hover {
   background: #3ba89e;
-}
+       }
