@@ -1,698 +1,378 @@
-/* ______________________________
-   LUCEN OS – NEUTRAL RUNTIME ENGINE
-   Local Nav (header) + Global Nav (footer)
-   Now with footer modes: interactive / reveal / static
-________________________________ */
-
-// Global settings – tweak per OS build.
-const LucenOS = {
-  settings: {
-    // "interactive" = original drawer: appears at bottom, hides on scroll up
-    // "reveal"      = shows while bottom sentinel is in view
-    // "static"      = always visible
-    footerMode: "interactive",
-
-    // How far you must scroll UP (px) before interactive footer hides
-    footerHideThreshold: 80,
-
-    theme: "rich-neutral",
-
-    // Toggle which Global Nav buttons show
-    showMasterFields: true,
-    showSettings: true,
-    showModes: true,
-    showSupport: true,
-    showDonate: true
-  },
-
-  state: {
-    level: "core",   // "core" | "master" | "field" | "module" | "mini"
-    masterId: null,
-    fieldId: null,
-    moduleId: null,
-    miniId: null
-  },
-
-  initNeutral() {
-    this.app = document.getElementById("app");
-
-    // Build Local Nav (header) + Global Nav (footer)
-    this.buildHeader();
-    this.buildFooter();
-    this.initFooterMode();
-
-    // Routing: listen to hash changes
-    window.addEventListener("hashchange", () => this.applyRouteFromHash());
-
-    // On first load: use hash if present, else Hub (core)
-    if (location.hash && location.hash.length > 1) {
-      this.applyRouteFromHash();
-    } else {
-      this.setState(
-        { level: "core", masterId: null, fieldId: null, moduleId: null, miniId: null },
-        true
-      );
-    }
-  },
-
-  /* ===== ROUTING UTILITIES ===== */
-
-  encodeRoute(state) {
-    const { level, masterId, fieldId, moduleId, miniId } = state;
-
-    if (level === "core") return "#core";
-    if (level === "master") return `#master|${masterId}`;
-    if (level === "field") return `#field|${masterId}|${fieldId}`;
-    if (level === "module") return `#module|${masterId}|${fieldId}|${moduleId}`;
-    if (level === "mini") return `#mini|${masterId}|${fieldId}|${moduleId}|${miniId}`;
-
-    return "#core";
-  },
-
-  decodeRoute(hash) {
-    if (!hash || hash.length <= 1) {
-      return {
-        level: "core",
-        masterId: null,
-        fieldId: null,
-        moduleId: null,
-        miniId: null
-      };
-    }
-
-    const raw = hash.replace(/^#/, "");
-    const parts = raw.split("|");
-    const kind = parts[0];
-
-    if (kind === "core") {
-      return { level: "core", masterId: null, fieldId: null, moduleId: null, miniId: null };
-    }
-
-    if (kind === "master" && parts.length >= 2) {
-      return { level: "master", masterId: parts[1], fieldId: null, moduleId: null, miniId: null };
-    }
-
-    if (kind === "field" && parts.length >= 3) {
-      return {
-        level: "field",
-        masterId: parts[1],
-        fieldId: parts[2],
-        moduleId: null,
-        miniId: null
-      };
-    }
-
-    if (kind === "module" && parts.length >= 4) {
-      return {
-        level: "module",
-        masterId: parts[1],
-        fieldId: parts[2],
-        moduleId: parts[3],
-        miniId: null
-      };
-    }
-
-    if (kind === "mini" && parts.length >= 5) {
-      return {
-        level: "mini",
-        masterId: parts[1],
-        fieldId: parts[2],
-        moduleId: parts[3],
-        miniId: parts[4]
-      };
-    }
-
-    // Fallback
-    return {
-      level: "core",
-      masterId: null,
-      fieldId: null,
-      moduleId: null,
-      miniId: null
-    };
-  },
-
-  applyRouteFromHash() {
-    const parsed = this.decodeRoute(location.hash);
-    this.setState(parsed, false); // don't push history again
-  },
-
-  setState(newState, pushHistory) {
-    this.state = { ...newState };
-
-    if (pushHistory) {
-      const targetHash = this.encodeRoute(this.state);
-      if (location.hash !== targetHash) {
-        location.hash = targetHash;
-      }
-    }
-
-    this.render();
-    window.scrollTo({ top: 0, behavior: "instant" });
-  },
-
-  /* ===== LOCAL NAV (HEADER) ===== */
-
-  buildHeader() {
-    const shell = document.createElement("div");
-    shell.className = "header-shell";
-
-    const header = document.createElement("div");
-    header.className = "header";
-
-    // Back + title + breadcrumbs
-    const topRow = document.createElement("div");
-    topRow.className = "header-top-row";
-
-    const backBtn = document.createElement("button");
-    backBtn.type = "button";
-    backBtn.className = "btn header-back";
-    backBtn.textContent = "Back";
-    backBtn.onclick = () => this.navigateUp();
-
-    const top = document.createElement("div");
-    top.className = "header-top";
-
-    const title = document.createElement("div");
-    title.className = "header-title";
-    title.textContent = "Hub – Clarity Movement";
-
-    const sub = document.createElement("div");
-    sub.className = "header-sub";
-    sub.textContent = "Multi-field skeleton • Local Nav within this universe";
-
-    const pos = document.createElement("div");
-    pos.className = "header-pos";
-    pos.textContent = "";
-
-    top.appendChild(title);
-    top.appendChild(sub);
-    top.appendChild(pos);
-
-    topRow.appendChild(backBtn);
-    topRow.appendChild(top);
-
-    const toolbar = document.createElement("div");
-    toolbar.className = "toolbar";
-
-    header.appendChild(topRow);
-    header.appendChild(toolbar);
-    shell.appendChild(header);
-
-    document.body.insertBefore(shell, this.app);
-
-    this.headerShell = shell;
-    this.headerPos = pos;
-    this.toolbar = toolbar;
-    this.backButton = backBtn;
-  },
-
-  updateHeader(context) {
-    const isCore = this.state.level === "core";
-
-    // Back only when not at Hub
-    if (this.backButton) {
-      this.backButton.style.display = isCore ? "none" : "inline-flex";
-    }
-
-    // Breadcrumb text
-    const parts = [];
-    if (context.master) parts.push(context.master.name);
-    if (context.field) parts.push(context.field.name);
-    if (context.module) parts.push(context.module.name);
-    if (context.mini) parts.push(context.mini.name);
-
-    const levelLabel = this.state.level.toUpperCase();
-    const path = parts.length ? parts.join(" / ") : "Hub";
-
-    if (this.headerPos) {
-      this.headerPos.textContent = `${levelLabel} • ${path}`;
-    }
-
-    // Toolbar pills (local navigation choices)
-    this.toolbar.innerHTML = "";
-
-    const WC = window.LucenWorld;
-
-    if (this.state.level === "core") {
-      WC.masterFields.forEach(mf => {
-        this.toolbar.appendChild(
-          LucenComponents.createToolbarPill(
-            mf.name,
-            false,
-            () => this.goMaster(mf.id)
-          )
-        );
-      });
-    } else if (this.state.level === "master") {
-      this.toolbar.appendChild(
-        LucenComponents.createToolbarPill("Hub", false, () => this.goCore())
-      );
-
-      context.master.fields.forEach(f => {
-        this.toolbar.appendChild(
-          LucenComponents.createToolbarPill(
-            f.name,
-            context.field && context.field.id === f.id,
-            () => this.goField(context.master.id, f.id)
-          )
-        );
-      });
-    } else if (this.state.level === "field") {
-      this.toolbar.appendChild(
-        LucenComponents.createToolbarPill(
-          context.master.name,
-          false,
-          () => this.goMaster(context.master.id)
-        )
-      );
-
-      context.field.modules.forEach(mod => {
-        this.toolbar.appendChild(
-          LucenComponents.createToolbarPill(
-            mod.name,
-            context.module && context.module.id === mod.id,
-            () => this.goModule(context.master.id, context.field.id, mod.id)
-          )
-        );
-      });
-    } else if (this.state.level === "module" || this.state.level === "mini") {
-      this.toolbar.appendChild(
-        LucenComponents.createToolbarPill(
-          context.field.name,
-          false,
-          () => this.goField(context.master.id, context.field.id)
-        )
-      );
-
-      context.field.modules.forEach(mod => {
-        this.toolbar.appendChild(
-          LucenComponents.createToolbarPill(
-            mod.name,
-            context.module && context.module.id === mod.id,
-            () => this.goModule(context.master.id, context.field.id, mod.id)
-          )
-        );
-      });
-    }
-  },
-
-  /* ===== GLOBAL NAV (FOOTER / OS BAR) ===== */
-
-  buildFooter() {
-    const shell = document.createElement("div");
-    shell.className = "footer-shell";
-
-    const footer = document.createElement("div");
-    footer.className = "footer";
-
-    const title = document.createElement("div");
-    title.className = "footer-title";
-    title.textContent = "Global Nav – Lucen Hub";
-
-    const sub = document.createElement("div");
-    sub.className = "footer-sub";
-    sub.textContent =
-      "OS-level rail. Move between Hub, master fields, settings, modes and support.";
-
-    const rows = document.createElement("div");
-    rows.className = "footer-rows";
-
-    // Row 1 – Movement (Hub | Master Fields)
-    const row1 = document.createElement("div");
-    row1.className = "footer-row";
-
-    const btnHub = this.createFooterButton("Hub", () => this.goCore());
-    row1.appendChild(btnHub);
-
-    if (this.settings.showMasterFields) {
-      const btnMasters = this.createFooterButton("Master Fields", () => this.goCore());
-      row1.appendChild(btnMasters);
-    } else {
-      row1.appendChild(this.createFooterSpacer());
-    }
-
-    // Row 2 – System control (Settings | Modes)
-    const row2 = document.createElement("div");
-    row2.className = "footer-row";
-
-    if (this.settings.showSettings) {
-      const btnSettings = this.createFooterButton("Settings", () => {
-        // Placeholder – wire to settings panel later
-        alert("Settings panel – to be wired.");
-      });
-      row2.appendChild(btnSettings);
-    } else {
-      row2.appendChild(this.createFooterSpacer());
-    }
-
-    if (this.settings.showModes) {
-      const btnModes = this.createFooterButton("Modes", () => {
-        // Placeholder – wire to modes UI later
-        alert("Modes selector – to be wired.");
-      });
-      row2.appendChild(btnModes);
-    } else {
-      row2.appendChild(this.createFooterSpacer());
-    }
-
-    // Row 3 – External / foundation (Support | Donate)
-    const row3 = document.createElement("div");
-    row3.className = "footer-row";
-
-    if (this.settings.showSupport) {
-      const btnSupport = this.createFooterButton("Support", () => {
-        // Placeholder – link to support/FAQ page later
-        alert("Support / FAQ – to be wired.");
-      });
-      row3.appendChild(btnSupport);
-    } else {
-      row3.appendChild(this.createFooterSpacer());
-    }
-
-    if (this.settings.showDonate) {
-      const donate = document.createElement("a");
-      donate.href = "https://www.educationalfreedom.uk/donate";
-      donate.target = "_blank";
-      donate.rel = "noopener noreferrer";
-      donate.className = "footer-link footer-donate";
-      donate.textContent = "Donate";
-      row3.appendChild(donate);
-    } else {
-      row3.appendChild(this.createFooterSpacer());
-    }
-
-    rows.appendChild(row1);
-    rows.appendChild(row2);
-    rows.appendChild(row3);
-
-    footer.appendChild(title);
-    footer.appendChild(sub);
-    footer.appendChild(rows);
-
-    shell.appendChild(footer);
-    document.body.appendChild(shell);
-
-    this.footerShell = shell;
-  },
-
-  createFooterButton(label, onClick) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "footer-link";
-    btn.textContent = label;
-    btn.onclick = onClick;
-    return btn;
-  },
-
-  createFooterSpacer() {
-    const span = document.createElement("div");
-    span.className = "footer-spacer";
-    return span;
-  },
-
-  initFooterMode() {
-    if (!this.footerShell || !this.app) return;
-
-    const mode = this.settings.footerMode || "interactive";
-
-    // Ensure sentinel exists at the bottom of scrollable content (above footer)
-    if (!this.footerSentinel) {
-      const sentinel = document.createElement("div");
-      sentinel.id = "lucen-footer-trigger";
-      sentinel.style.height = "1px";
-      sentinel.style.width = "100%";
-      this.app.appendChild(sentinel);
-      this.footerSentinel = sentinel;
-    }
-
-    // Clear any existing observer / scroll handler
-    if (this.footerObserver) {
-      this.footerObserver.disconnect();
-      this.footerObserver = null;
-    }
-    if (this.footerScrollHandler) {
-      window.removeEventListener("scroll", this.footerScrollHandler);
-      this.footerScrollHandler = null;
-    }
-
-    this.footerShell.classList.remove("footer-static", "visible");
-    this.footerVisible = false;
-
-    if (mode === "static") {
-      // Always visible, OS-style fixed bar
-      this.footerShell.classList.add("visible", "footer-static");
-      return;
-    }
-
-    // Shared IntersectionObserver for "interactive" and "reveal"
-    const observer = new IntersectionObserver(
-      entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            // Bottom reached → reveal footer
-            this.footerShell.classList.add("visible");
-            this.footerVisible = true;
-            this.footerLastRevealScrollY = window.scrollY || 0;
-          } else {
-            if (mode === "reveal") {
-              // In reveal mode, hide when sentinel leaves viewport
-              this.footerShell.classList.remove("visible");
-              this.footerVisible = false;
-            }
-            // In interactive mode, hide is handled via scroll listener
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    observer.observe(this.footerSentinel);
-    this.footerObserver = observer;
-    this.footerModeActive = mode;
-
-    // Interactive mode: hide after scrolling UP by threshold
-    if (mode === "interactive") {
-      const threshold = this.settings.footerHideThreshold || 80;
-      this.footerLastScrollY = window.scrollY || 0;
-
-      this.footerScrollHandler = () => {
-        const current = window.scrollY || 0;
-        const delta = current - this.footerLastScrollY;
-
-        // Scrolling up
-        if (delta < 0 && this.footerVisible) {
-          const travelUp = this.footerLastScrollY - current;
-          if (travelUp >= threshold) {
-            this.footerShell.classList.remove("visible");
-            this.footerVisible = false;
-          }
-        }
-
-        this.footerLastScrollY = current;
-      };
-
-      window.addEventListener("scroll", this.footerScrollHandler, { passive: true });
-    }
-  },
-
-  /* ===== NAV HELPERS (ALL ROUTES GO THROUGH setState) ===== */
-
-  navigateUp() {
-    const { level, masterId, fieldId, moduleId } = this.state;
-
-    if (level === "mini") {
-      this.setState(
-        { level: "module", masterId, fieldId, moduleId, miniId: null },
-        true
-      );
-    } else if (level === "module") {
-      this.setState(
-        { level: "field", masterId, fieldId, moduleId: null, miniId: null },
-        true
-      );
-    } else if (level === "field") {
-      this.setState(
-        { level: "master", masterId, fieldId: null, moduleId: null, miniId: null },
-        true
-      );
-    } else if (level === "master") {
-      this.setState(
-        { level: "core", masterId: null, fieldId: null, moduleId: null, miniId: null },
-        true
-      );
-    } else {
-      // Already at Hub
-    }
-  },
-
-  goCore() {
-    this.setState(
-      { level: "core", masterId: null, fieldId: null, moduleId: null, miniId: null },
-      true
-    );
-  },
-
-  goMaster(masterId) {
-    this.setState(
-      { level: "master", masterId, fieldId: null, moduleId: null, miniId: null },
-      true
-    );
-  },
-
-  goField(masterId, fieldId) {
-    this.setState(
-      { level: "field", masterId, fieldId, moduleId: null, miniId: null },
-      true
-    );
-  },
-
-  goModule(masterId, fieldId, moduleId) {
-    this.setState(
-      { level: "module", masterId, fieldId, moduleId, miniId: null },
-      true
-    );
-  },
-
-  goMini(masterId, fieldId, moduleId, miniId) {
-    this.setState(
-      { level: "mini", masterId, fieldId, moduleId, miniId },
-      true
-    );
-  },
-
-  /* ===== WORLD LOOKUPS ===== */
-
-  getContext() {
-    const W = window.LucenWorld;
-    let master = null,
-      field = null,
-      module = null,
-      mini = null;
-
-    if (this.state.masterId) {
-      master = W.masterFields.find(m => m.id === this.state.masterId) || null;
-    }
-    if (master && this.state.fieldId) {
-      field = master.fields.find(f => f.id === this.state.fieldId) || null;
-    }
-    if (field && this.state.moduleId) {
-      module = field.modules.find(m => m.id === this.state.moduleId) || null;
-    }
-    if (module && this.state.miniId) {
-      mini = module.minis.find(mm => mm.id === this.state.miniId) || null;
-    }
-
-    return { master, field, module, mini };
-  },
-
-  /* ===== RENDER ===== */
-
-  render() {
-    const W = window.LucenWorld;
-    const ctx = this.getContext();
-
-    // Update Local Nav (header)
-    this.updateHeader(ctx);
-
-    // Clear main area
-    this.app.innerHTML = "";
-
-    const view = document.createElement("div");
-    view.className = "view active";
-
-    if (this.state.level === "core") {
-      const grid = document.createElement("div");
-      grid.className = "grid";
-
-      W.masterFields.forEach(mf => {
-        const card = LucenComponents.createCard({
-          title: mf.name,
-          summary: mf.short,
-          meta: `Fields: ${mf.fields.length}`,
-          buttonLabel: "Open master field",
-          onOpen: () => this.goMaster(mf.id)
-        });
-        grid.appendChild(card);
-      });
-
-      view.appendChild(grid);
-    } else if (this.state.level === "master" && ctx.master) {
-      const grid = document.createElement("div");
-      grid.className = "grid";
-
-      ctx.master.fields.forEach(f => {
-        const card = LucenComponents.createCard({
-          title: f.name,
-          summary: f.short,
-          meta: `Modules: ${f.modules.length}`,
-          buttonLabel: "Open field",
-          onOpen: () => this.goField(ctx.master.id, f.id)
-        });
-        grid.appendChild(card);
-      });
-
-      view.appendChild(grid);
-    } else if (this.state.level === "field" && ctx.master && ctx.field) {
-      const grid = document.createElement("div");
-      grid.className = "grid";
-
-      ctx.field.modules.forEach(mod => {
-        const card = LucenComponents.createCard({
-          title: mod.name,
-          summary: mod.short,
-          meta: `Mini modules: ${mod.minis.length}`,
-          buttonLabel: "Open module",
-          onOpen: () =>
-            this.goModule(ctx.master.id, ctx.field.id, mod.id)
-        });
-        grid.appendChild(card);
-      });
-
-      view.appendChild(grid);
-    } else if (this.state.level === "module" && ctx.master && ctx.field && ctx.module) {
-      const grid = document.createElement("div");
-      grid.className = "grid";
-
-      const card = LucenComponents.createCard({
-        title: ctx.module.name,
-        summary: ctx.module.short,
-        meta: `Mini modules: ${ctx.module.minis.length}`,
-        buttonLabel: "Back to field",
-        onOpen: () => this.goField(ctx.master.id, ctx.field.id)
-      });
-
-      const miniList = document.createElement("div");
-      miniList.className = "mini-list";
-
-      ctx.module.minis.forEach(mm => {
-        const row = document.createElement("div");
-        row.className = "mini-item";
-
-        const left = document.createElement("div");
-        left.className = "mini-name";
-        left.textContent = mm.name;
-
-        const right = document.createElement("div");
-        right.className = "mini-body";
-        right.textContent = mm.body;
-
-        row.appendChild(left);
-        row.appendChild(right);
-
-        row.onclick = () =>
-          this.goMini(ctx.master.id, ctx.field.id, ctx.module.id, mm.id);
-
-        miniList.appendChild(row);
-      });
-
-      card.appendChild(miniList);
-      grid.appendChild(card);
-      view.appendChild(grid);
-    } else if (this.state.level === "mini" && ctx.mini && ctx.module && ctx.field && ctx.master) {
-      const grid = document.createElement("div");
-      grid.className = "grid";
-
-      const card = LucenComponents.createCard({
-        title: ctx.mini.name,
-        summary: 
+/* ——————————————————————————
+   LUCEN OS – CORE RUNTIME CSS
+   Rich Neutral Variant
+—————————————————————————— */
+
+:root {
+  --bg: #f3f2ef;
+  --bg-soft: #f7f6f4;
+  --panel: rgba(255,255,255,0.9);
+  --panel-solid: #ffffff;
+
+  --text-main: #1b1c1e;
+  --text-soft: #6e7379;
+  --text-faint: #a0a5ac;
+
+  --accent: #4aaea3;
+  --accent-deep: #2f6f6b;
+
+  --shadow-soft: 0 14px 40px rgba(0,0,0,0.06);
+  --shadow-mid: 0 18px 55px rgba(0,0,0,0.10);
+  --shadow-deep: 0 28px 70px rgba(0,0,0,0.16);
+
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+
+  --footer-bg: #0b1015;
+  --footer-panel: #11171d;
+  --footer-text: #e4e7ec;
+  --footer-accent: #44b7ad;
+
+  --transition-fast: 160ms ease-out;
+  --transition-med: 240ms ease-out;
+  --transition-slow: 420ms ease;
+}
+
+/* GLOBAL */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  font-family: system-ui, -apple-system, "SF Pro Text", sans-serif;
+  color: var(--text-main);
+}
+
+body {
+  min-height: 100vh;
+}
+
+#app {
+  max-width: 1020px;
+  margin: 0 auto;
+  padding: 24px 16px 140px;
+}
+
+/* LOCAL NAV (HEADER) */
+
+.header-shell {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding: 10px 16px 6px;
+  background: linear-gradient(to bottom,
+    rgba(243,242,239,0.98),
+    rgba(243,242,239,0.94),
+    rgba(243,242,239,0.88),
+    rgba(243,242,239,0)
+  );
+  backdrop-filter: blur(18px);
+}
+
+.header {
+  max-width: 1020px;
+  margin: 0 auto;
+  padding: 14px 18px 12px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(255,255,255,0.78);
+  box-shadow: var(--shadow-soft);
+}
+
+.header-top-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.header-back {
+  align-self: flex-start;
+  padding-inline: 14px;
+  font-size: 12px;
+}
+
+.header-top {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.header-title {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.header-sub {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+.header-pos {
+  margin-top: 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-faint);
+}
+
+/* TOOLBAR */
+
+.toolbar {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.toolbar::-webkit-scrollbar {
+  display: none;
+}
+
+.toolbar-pill {
+  flex: 0 0 auto;
+  padding: 7px 16px;
+  font-size: 12px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-soft);
+  border: 1px solid rgba(0,0,0,0.05);
+  color: var(--text-soft);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition-fast);
+}
+
+.toolbar-pill.active {
+  background: linear-gradient(to right, #4aaea3, #2f6f6b);
+  color: #ffffff;
+  border-color: rgba(255,255,255,0.85);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.22);
+}
+
+.toolbar-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.16);
+}
+
+/* GRID + CARDS */
+
+.grid {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+@media (min-width: 720px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.card {
+  padding: 20px 20px 18px;
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  border: 1px solid rgba(255,255,255,0.9);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-mid);
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.card-summary {
+  color: var(--text-soft);
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.card-meta {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-bottom: 12px;
+}
+
+.card-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+/* BUTTONS */
+
+.btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(0,0,0,0.06);
+  background: var(--bg-soft);
+  font-size: 13px;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.btn-primary {
+  background: linear-gradient(to right, #4aaea3, #2f6f6b);
+  color: #ffffff;
+  border-color: rgba(255,255,255,0.8);
+  box-shadow: var(--shadow-soft);
+}
+
+.btn-primary:hover {
+  box-shadow: var(--shadow-deep);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+/* MINI MODULE LIST */
+
+.mini-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.mini-item {
+  padding: 12px 18px;
+  border-radius: var(--radius-pill);
+  background: rgba(255,255,255,0.9);
+  border: 1px solid rgba(0,0,0,0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.mini-name {
+  font-weight: 500;
+}
+
+.mini-body {
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+/* VIEW TRANSITIONS */
+
+.view {
+  opacity: 0;
+  transform: translateY(14px);
+  display: none;
+  transition: opacity var(--transition-med), transform var(--transition-med);
+}
+
+.view.active {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* GLOBAL NAV (FOOTER / OS BAR) */
+
+.footer-shell {
+  position: fixed;
+  left: 50%;
+  bottom: -160px;
+  transform: translateX(-50%);
+  width: calc(100% - 24px);
+  max-width: 1020px;
+  z-index: 30;
+  transition: bottom var(--transition-slow);
+}
+
+.footer-shell.visible {
+  bottom: 0;
+}
+
+.footer-shell.footer-static {
+  bottom: 0;
+}
+
+.footer {
+  padding: 18px 18px 14px;
+  border-radius: 22px 22px 14px 14px;
+  background: var(--footer-panel);
+  color: var(--footer-text);
+  box-shadow: 0 -16px 50px rgba(0,0,0,0.6);
+  backdrop-filter: blur(18px);
+}
+
+.footer-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.footer-sub {
+  font-size: 12px;
+  color: #a5b0c0;
+  margin-top: 4px;
+}
+
+/* Rows + shadow notches */
+
+.footer-rows {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.footer-row {
+  display: flex;
+  gap: 10px;
+  padding: 6px 0;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    inset 0 -1px 0 rgba(0,0,0,0.55);
+}
+
+/* Remove top notch on first row and bottom notch on last row */
+.footer-row:first-child {
+  box-shadow:
+    inset 0 -1px 0 rgba(0,0,0,0.55);
+}
+
+.footer-row:last-child {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.footer-link,
+.footer-spacer {
+  flex: 1 1 50%;
+  text-align: center;
+}
+
+/* Footer buttons */
+
+.footer-link {
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(255,255,255,0.1);
+  background: #181f26;
+  color: var(--footer-text);
+  font-size: 11px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.footer-link:hover {
+  background: #1f2730;
+}
+
+.footer-donate {
+  background: var(--footer-accent);
+  color: #071816;
+  border-color: #1a433d;
+}
+
+.footer-donate:hover {
+  background: #3ba89e;
+   }
