@@ -5,26 +5,25 @@
   <title>Lucen OS – Neutral Engine Runtime</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- CORE STYLES -->
-  <link rel="stylesheet" href="core/core.css" />
-  <link rel="stylesheet" href="skins/skin-neutral.css" />
+  <!-- CORE STYLES (cache-busting) -->
+  <link rel="stylesheet" href="core/core.css?v=7" />
+  <link rel="stylesheet" href="skins/skin-neutral.css?v=7" />
 </head>
 
 <body>
-  <!-- The header + toolbar + footer are created by JS -->
+  <!-- Local Nav + views get injected here -->
   <div id="app"></div>
 
   <!-- COMPONENTS -->
-  <script src="core/components.js"></script>
+  <script src="core/components.js?v=7"></script>
 
   <!-- ENGINE -->
-  <script src="core/app.js"></script>
+  <script src="core/app.js?v=7"></script>
 
   <!-- WORLD CONFIG -->
-  <script src="data/world-neutral.js"></script>
+  <script src="data/world-neutral.js?v=7"></script>
 
   <script>
-    // Boot the neutral world
     LucenOS.initNeutral();
   </script>
 </body>
