@@ -1,15 +1,15 @@
-/* ______________________________
-   LUCEN OS – COMPONENTS
-________________________________ */
+/* ______________________________________
+   LUCEN OS – UI COMPONENT FACTORY
+______________________________________ */
 
 window.LucenComponents = {
   createToolbarPill(label, active, onClick) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "toolbar-pill" + (active ? " active" : "");
-    btn.textContent = label;
-    btn.onclick = onClick;
-    return btn;
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "toolbar-pill" + (active ? " active" : "");
+    b.textContent = label;
+    b.onclick = onClick;
+    return b;
   },
 
   createCard({ title, summary, meta, buttonLabel, onOpen }) {
@@ -19,36 +19,22 @@ window.LucenComponents = {
     const t = document.createElement("div");
     t.className = "card-title";
     t.textContent = title;
-    card.appendChild(t);
 
-    if (summary) {
-      const s = document.createElement("div");
-      s.className = "card-summary";
-      s.textContent = summary;
-      card.appendChild(s);
-    }
+    const s = document.createElement("div");
+    s.className = "card-summary";
+    s.textContent = summary;
 
-    if (meta) {
-      const m = document.createElement("div");
-      m.className = "card-meta";
-      m.textContent = meta;
-      card.appendChild(m);
-    }
+    const m = document.createElement("div");
+    m.className = "card-meta";
+    m.textContent = meta;
 
-    if (onOpen) {
-      const actions = document.createElement("div");
-      actions.className = "card-actions";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn card-btn";
+    btn.textContent = buttonLabel;
+    btn.onclick = onOpen;
 
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "btn btn-primary";
-      btn.textContent = buttonLabel || "Open";
-      btn.onclick = onOpen;
-
-      actions.appendChild(btn);
-      card.appendChild(actions);
-    }
-
+    card.append(t, s, m, btn);
     return card;
   }
 };
